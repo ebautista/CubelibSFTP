@@ -1107,6 +1107,27 @@ Function ExtractFileName(ByVal FileName As String) As String
     ExtractFileName = Mid(FileName, Idx + 1)
 End Function
 
+Private Sub Form_Unload(Cancel As Integer)
+    Dim FileInfo1 As IElSftpFileInfoX
+    
+    TimeOutCounter.Enabled = False
+    
+    'Call UnloadControls(Me)
+    
+    While m_colCurrentFileList.Count > 0
+        Set FileInfo1 = m_colCurrentFileList(1)
+        Set FileInfo1 = Nothing
+        Call m_colCurrentFileList.Remove(1)
+    Wend
+    
+    Set m_colCurrentFileList = Nothing
+    
+    Unload Me
+    
+    Set mvarCSFTP = Nothing
+    Set MainForm = Nothing
+End Sub
+
 Private Sub TimeOutCounter_Timer()
     mvarCSFTP.HasTimeOut = True
 End Sub
@@ -1117,6 +1138,8 @@ Public Sub ConnectSFTP()
         Call ElSimpleSftpClientX.Close
     End If
     
+    ElSimpleSftpClientX.UserName = mvarCSFTP.UserName
+    ElSimpleSftpClientX.Password = mvarCSFTP.Password
     ElSimpleSftpClientX.EnableVersion SB_SFTP_VERSION_3
     ElSimpleSftpClientX.Address = mvarCSFTP.HostName
     ElSimpleSftpClientX.Port = mvarCSFTP.PortNumber
