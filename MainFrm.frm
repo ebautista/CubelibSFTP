@@ -564,347 +564,347 @@ End Sub
 '    Call mvarCSFTP.DisconnectFromServer(False)
 'End Sub
 
-Private Sub SftpClient_OnOpenConnection()
-    Dim strVersion As String
-    
-    mvarCSFTP.TraceText = MESSAGE_PREFIX & "Sftp connection started..."
-  
-    If SftpClient.Version = SB_SFTP_VERSION_3 Then
-        strVersion = "3"
-    ElseIf SftpClient.Version = SB_SFTP_VERSION_4 Then
-        strVersion = "4"
-    Else
-        strVersion = "unknown"
-    End If
-    
-    mvarCSFTP.TraceText = MESSAGE_PREFIX & "Sftp version is " & strVersion & "..."
-    
-    m_strCurrentDir = "."
-    Call BuildFileList(".")
-End Sub
+'Private Sub SftpClient_OnOpenConnection()
+'    Dim strVersion As String
+'
+'    mvarCSFTP.TraceText = MESSAGE_PREFIX & "Sftp connection started..."
+'
+'    If SftpClient.Version = SB_SFTP_VERSION_3 Then
+'        strVersion = "3"
+'    ElseIf SftpClient.Version = SB_SFTP_VERSION_4 Then
+'        strVersion = "4"
+'    Else
+'        strVersion = "unknown"
+'    End If
+'
+'    mvarCSFTP.TraceText = MESSAGE_PREFIX & "Sftp version is " & strVersion & "..."
+'
+'    m_strCurrentDir = "."
+'    Call BuildFileList(".")
+'End Sub
 
-Private Sub SftpClient_OnCloseConnection()
-    mvarCSFTP.TraceText = MESSAGE_PREFIX & "Sftp connection closed..."
-End Sub
+'Private Sub SftpClient_OnCloseConnection()
+'    mvarCSFTP.TraceText = MESSAGE_PREFIX & "Sftp connection closed..."
+'End Sub
+'
+'Private Sub SftpClient_OnOpenFile(ByVal Handle As String)
+'    Select Case m_lngState
+'        Case STATE_OPEN_DIRECTORY_SENT
+'            mvarCSFTP.TraceText = MESSAGE_PREFIX & "Root directory opened..."
+'            m_strCurrentHandle = Handle
+'            Call SftpClient.ReadDirectory(m_strCurrentHandle)
+'            m_lngState = STATE_READ_DIRECTORY_SENT
+'
+'        Case STATE_CHANGE_DIR
+'            Call SftpClient.CloseHandle(Handle)
+'
+'        Case STATE_DOWNLOAD_OPEN
+'            m_strCurrentHandle = Handle
+'            mvarCSFTP.TraceText = MESSAGE_PREFIX & "Start of SFTP Download..."
+'            Call SftpClient.Read(Handle, m_lngCurrentFileOffset, 0, FILE_BLOCK_SIZE)
+'            m_lngState = STATE_DOWNLOAD_RECEIVE
+'
+'        Case STATE_UPLOAD_OPEN
+'            m_strCurrentHandle = Handle
+'            mvarCSFTP.TraceText = MESSAGE_PREFIX & "Start of SFTP Upload..."
+'            Call WriteNextBlockToFile
+'            m_lngState = STATE_UPLOAD_SEND
+'
+'    End Select
+'End Sub
+'
+'Private Sub SftpClient_OnError(ByVal ErrorCode As Long, ByVal Comment As String)
+'    If (m_lngState = STATE_READ_DIRECTORY_SENT) And (ErrorCode = SFTP_ERROR_EOF) Then
+'        mvarCSFTP.TraceText = MESSAGE_PREFIX & "Directory List Received..."
+'        Call CloseCurrentHandle
+'        m_blnDirectoryReadFinished = True
+'    ElseIf (m_lngState = STATE_DOWNLOAD_RECEIVE) And (ErrorCode = SFTP_ERROR_EOF) Then
+'        mvarCSFTP.TraceText = MESSAGE_PREFIX & "Message Received..."
+'        Close #m_lngCurrentFile
+'        Call CloseCurrentHandle
+'        m_blnFileDownloaded = True
+'    Else
+'        mvarCSFTP.TraceText = MESSAGE_PREFIX & "Log in SftpClient_OnError: Error Code (" & ErrorCode & "), Description (" & Comment & ")."
+'        Call mvarCSFTP.DisconnectFromServer(False)
+'    End If
+'
+'    'mvarCSFTP.TraceText = MESSAGE_PREFIX & "TEST LOGS - " & Comment
+'End Sub
+'
+'Private Sub SftpClient_OnSuccess(ByVal Comment As String)
+'    Select Case m_lngState
+'        Case STATE_REMOVE
+'            m_blnFileDeleted = True
+'
+'        Case STATE_UPLOAD_SEND
+'            Call WriteNextBlockToFile
+'
+'        Case STATE_CLOSE_HANDLE
+'            Close #m_lngCurrentFile
+'            Call BuildFileList(m_strCurrentDir)
+'
+'    End Select
+'
+'    If Len(Comment) > 0 Then
+'        mvarCSFTP.TraceText = MESSAGE_PREFIX & "TEST LOGS - " & Comment
+'    End If
+'End Sub
+'
+'Private Sub SftpClient_OnDirectoryListing(ByVal Listing As Variant)
+'    Dim lngIdx As Long
+'    Dim FileInfo1 As IElSftpFileInfoX
+'    Dim FI2 As IElSftpFileInfoX
+'
+'    If m_lngState = STATE_READ_DIRECTORY_SENT Then
+'        For lngIdx = LBound(Listing) To UBound(Listing)
+'            Set FileInfo1 = New ElSftpFileInfoX
+'
+'            On Error Resume Next
+'            Set FI2 = Listing(lngIdx)
+'            On Error GoTo 0
+'
+'            Call FI2.CopyTo(FileInfo1)
+'
+'            Call m_colCurrentFileList.Add(FileInfo1)
+'            Set FileInfo1 = Nothing
+'        Next
+'
+'        Call SftpClient.ReadDirectory(m_strCurrentHandle)
+'    End If
+'End Sub
+'
+'Private Sub SftpClient_OnData(ByVal Buffer As Variant)
+'  Dim Size As Long
+'
+'    Size = ArrSize(Buffer)
+'
+'    If m_lngState = STATE_DOWNLOAD_RECEIVE Then
+'        Call BlockWrite(m_lngCurrentFile, Buffer)
+'        m_lngCurrentFileOffset = m_lngCurrentFileOffset + Size
+'
+'        If m_lngCurrentFileOffset >= m_lngCurrentFileSize Then
+'            mvarCSFTP.TraceText = MESSAGE_PREFIX & "File received..."
+'            Close #m_lngCurrentFile
+'
+'            Call CloseCurrentHandle
+'            m_blnFileDownloaded = True
+'        Else
+'            Call SftpClient.Read(m_strCurrentHandle, m_lngCurrentFileOffset, 0, FILE_BLOCK_SIZE)
+'        End If
+'    End If
+'End Sub
+'
+'Private Sub SftpClient_OnAbsolutePath(ByVal Path As String)
+'    m_strCurrentDir = Path
+'    Call BuildFileList(m_strCurrentDir)
+'    editPath.Text = Path
+'End Sub
+'
+'Private Sub SftpClient_OnFileAttributes(ByVal Attributes As IElSftpFileAttributesX)
+'    Dim info As IElSftpFileInfoX
+'    Dim Row As Integer
+'    Dim SizeLo As Long, SizeHi As Long
+'    Dim Attr As IElSftpFileAttributesX
+'
+'    If ListView1.SelectedItem Is Nothing Then
+'        Exit Sub
+'    End If
+'
+'    Row = ListView1.SelectedItem.Index
+'    Set Attr = Attributes
+'
+'    Set info = m_colCurrentFileList(Row)
+'
+'    If Attr.IsAttributeIncluded(SB_SFTP_ATTR_SIZE) Then
+'        Call info.Attributes.GetSize(SizeLo, SizeHi)
+'        Call Attr.SetSize(SizeLo, SizeHi)
+'    End If
+'
+'    If Attr.IsAttributeIncluded(SB_SFTP_ATTR_UID) Then
+'        info.Attributes.UID = Attr.UID
+'    End If
+'
+'    If Attr.IsAttributeIncluded(SB_SFTP_ATTR_GID) Then
+'        info.Attributes.GID = Attr.GID
+'    End If
+'
+'    If Attr.IsAttributeIncluded(SB_SFTP_ATTR_ATIME) Then
+'        info.Attributes.ATime = Attr.ATime
+'    End If
+'
+'    If Attr.IsAttributeIncluded(SB_SFTP_ATTR_MTIME) Then
+'        info.Attributes.MTime = Attr.MTime
+'    End If
+'
+'    If Attr.IsAttributeIncluded(SB_SFTP_ATTR_EXTENDEDCOUNT) Then
+'        info.Attributes.ExtendedCount = Attr.ExtendedCount
+'    End If
+'
+'    info.Attributes.Directory = Attr.Directory
+'
+'    If (Attr.IsAttributeIncluded(SB_SFTP_ATTR_PERMISSIONS)) Then
+'        info.Attributes.UserRead = Attr.UserRead
+'        info.Attributes.UserWrite = Attr.UserWrite
+'        info.Attributes.UserExecute = Attr.UserExecute
+'
+'        info.Attributes.GroupRead = Attr.GroupRead
+'        info.Attributes.GroupWrite = Attr.GroupWrite
+'        info.Attributes.GroupExecute = Attr.GroupExecute
+'
+'        info.Attributes.OtherRead = Attr.OtherRead
+'        info.Attributes.OtherWrite = Attr.OtherWrite
+'        info.Attributes.OtherExecute = Attr.OtherExecute
+'    End If
+'
+'    Call SetCellInfo(Row, info)
+'End Sub
+'
+'Private Sub scktClient_Connect()
+'    mvarCSFTP.TraceText = MESSAGE_PREFIX & "TCP connection opened..."
+'    mvarCSFTP.TraceText = MESSAGE_PREFIX & "Authenticating Username: " & mvarCSFTP.UserName & ", Password: " & mvarCSFTP.Password & " using SSHClient..."
+'
+'    m_blnAuthenticationFailed = False
+'
+'    SSHClient.UserName = mvarCSFTP.UserName
+'    SSHClient.Password = mvarCSFTP.Password
+'    Call SSHClient.Open
+'End Sub
+'
+'Private Sub scktClient_DataArrival(ByVal bytesTotal As Long)
+'    m_blnClientDataAvailable = True
+'
+'    While m_blnClientDataAvailable
+'        SSHClient.DataAvailable
+'    Wend
+'End Sub
+'
+'
+'Private Sub scktClient_Close()
+'    mvarCSFTP.TraceText = MESSAGE_PREFIX & "TCP connection closed..."
+'End Sub
 
-Private Sub SftpClient_OnOpenFile(ByVal Handle As String)
-    Select Case m_lngState
-        Case STATE_OPEN_DIRECTORY_SENT
-            mvarCSFTP.TraceText = MESSAGE_PREFIX & "Root directory opened..."
-            m_strCurrentHandle = Handle
-            Call SftpClient.ReadDirectory(m_strCurrentHandle)
-            m_lngState = STATE_READ_DIRECTORY_SENT
-        
-        Case STATE_CHANGE_DIR
-            Call SftpClient.CloseHandle(Handle)
-        
-        Case STATE_DOWNLOAD_OPEN
-            m_strCurrentHandle = Handle
-            mvarCSFTP.TraceText = MESSAGE_PREFIX & "Start of SFTP Download..."
-            Call SftpClient.Read(Handle, m_lngCurrentFileOffset, 0, FILE_BLOCK_SIZE)
-            m_lngState = STATE_DOWNLOAD_RECEIVE
-        
-        Case STATE_UPLOAD_OPEN
-            m_strCurrentHandle = Handle
-            mvarCSFTP.TraceText = MESSAGE_PREFIX & "Start of SFTP Upload..."
-            Call WriteNextBlockToFile
-            m_lngState = STATE_UPLOAD_SEND
-            
-    End Select
-End Sub
+'Public Sub BuildFileList(ByVal Path As String)
+'    If scktClient.State <> sckConnected Then
+'        mvarCSFTP.TraceText = MESSAGE_PREFIX & "BuildFileList Error: not connected..."
+'        Exit Sub
+'    End If
+'
+'    While m_colCurrentFileList.Count > 0
+'        Call m_colCurrentFileList.Remove(1)
+'    Wend
+'
+'    If Path = "." Then
+'        mvarCSFTP.TraceText = MESSAGE_PREFIX & "Opening remote directory: Root Path..."
+'    Else
+'        mvarCSFTP.TraceText = MESSAGE_PREFIX & "Opening remote directory: " & Path & " ..."
+'    End If
+'
+'    Call SftpClient.OpenDirectory(Path)
+'    m_lngState = STATE_OPEN_DIRECTORY_SENT
+'End Sub
+'
+'Private Sub CloseCurrentHandle()
+'    If scktClient.State <> sckConnected Then
+'        mvarCSFTP.TraceText = MESSAGE_PREFIX & "CloseCurrentHandle Error: not connected..."
+'        Exit Sub
+'    End If
+'
+'    mvarCSFTP.TraceText = MESSAGE_PREFIX & "Closing active handle..."
+'    Call SftpClient.CloseHandle(m_strCurrentHandle)
+'End Sub
 
-Private Sub SftpClient_OnError(ByVal ErrorCode As Long, ByVal Comment As String)
-    If (m_lngState = STATE_READ_DIRECTORY_SENT) And (ErrorCode = SFTP_ERROR_EOF) Then
-        mvarCSFTP.TraceText = MESSAGE_PREFIX & "Directory List Received..."
-        Call CloseCurrentHandle
-        m_blnDirectoryReadFinished = True
-    ElseIf (m_lngState = STATE_DOWNLOAD_RECEIVE) And (ErrorCode = SFTP_ERROR_EOF) Then
-        mvarCSFTP.TraceText = MESSAGE_PREFIX & "Message Received..."
-        Close #m_lngCurrentFile
-        Call CloseCurrentHandle
-        m_blnFileDownloaded = True
-    Else
-        mvarCSFTP.TraceText = MESSAGE_PREFIX & "Log in SftpClient_OnError: Error Code (" & ErrorCode & "), Description (" & Comment & ")."
-        Call mvarCSFTP.DisconnectFromServer(False)
-    End If
-    
-    'mvarCSFTP.TraceText = MESSAGE_PREFIX & "TEST LOGS - " & Comment
-End Sub
-    
-Private Sub SftpClient_OnSuccess(ByVal Comment As String)
-    Select Case m_lngState
-        Case STATE_REMOVE
-            m_blnFileDeleted = True
-            
-        Case STATE_UPLOAD_SEND
-            Call WriteNextBlockToFile
-        
-        Case STATE_CLOSE_HANDLE
-            Close #m_lngCurrentFile
-            Call BuildFileList(m_strCurrentDir)
-            
-    End Select
-    
-    If Len(Comment) > 0 Then
-        mvarCSFTP.TraceText = MESSAGE_PREFIX & "TEST LOGS - " & Comment
-    End If
-End Sub
+'Private Function WritePermissions(ByVal Attributes As IElSftpFileAttributesX) As String
+'    Dim Result As String
+'
+'    Result = vbNullString
+'
+'    If Attributes.Directory Then
+'        Result = Result + "d"
+'    End If
+'
+'    If Attributes.UserRead Then
+'        Result = Result + "r"
+'    Else
+'        Result = Result + "-"
+'    End If
+'
+'    If Attributes.UserWrite Then
+'        Result = Result + "w"
+'    Else
+'        Result = Result + "-"
+'    End If
+'
+'    If Attributes.UserExecute Then
+'        Result = Result + "x"
+'    Else
+'        Result = Result + "-"
+'    End If
+'
+'    If Attributes.GroupRead Then
+'        Result = Result + "r"
+'    Else
+'        Result = Result + "-"
+'    End If
+'
+'    If Attributes.GroupWrite Then
+'        Result = Result + "w"
+'    Else
+'        Result = Result + "-"
+'    End If
+'
+'    If Attributes.GroupExecute Then
+'        Result = Result + "x"
+'    Else
+'        Result = Result + "-"
+'    End If
+'
+'    If Attributes.OtherRead Then
+'        Result = Result + "r"
+'    Else
+'        Result = Result + "-"
+'    End If
+'
+'    If Attributes.OtherWrite Then
+'        Result = Result + "w"
+'    Else
+'        Result = Result + "-"
+'    End If
+'
+'    If Attributes.OtherExecute Then
+'        Result = Result + "x"
+'    Else
+'        Result = Result + "-"
+'    End If
+'
+'    WritePermissions = Result
+'End Function
 
-Private Sub SftpClient_OnDirectoryListing(ByVal Listing As Variant)
-    Dim lngIdx As Long
-    Dim FileInfo1 As IElSftpFileInfoX
-    Dim FI2 As IElSftpFileInfoX
-    
-    If m_lngState = STATE_READ_DIRECTORY_SENT Then
-        For lngIdx = LBound(Listing) To UBound(Listing)
-            Set FileInfo1 = New ElSftpFileInfoX
-            
-            On Error Resume Next
-            Set FI2 = Listing(lngIdx)
-            On Error GoTo 0
-            
-            Call FI2.CopyTo(FileInfo1)
-    
-            Call m_colCurrentFileList.Add(FileInfo1)
-            Set FileInfo1 = Nothing
-        Next
-        
-        Call SftpClient.ReadDirectory(m_strCurrentHandle)
-    End If
-End Sub
-
-Private Sub SftpClient_OnData(ByVal Buffer As Variant)
-  Dim Size As Long
-  
-    Size = ArrSize(Buffer)
-    
-    If m_lngState = STATE_DOWNLOAD_RECEIVE Then
-        Call BlockWrite(m_lngCurrentFile, Buffer)
-        m_lngCurrentFileOffset = m_lngCurrentFileOffset + Size
-        
-        If m_lngCurrentFileOffset >= m_lngCurrentFileSize Then
-            mvarCSFTP.TraceText = MESSAGE_PREFIX & "File received..."
-            Close #m_lngCurrentFile
-            
-            Call CloseCurrentHandle
-            m_blnFileDownloaded = True
-        Else
-            Call SftpClient.Read(m_strCurrentHandle, m_lngCurrentFileOffset, 0, FILE_BLOCK_SIZE)
-        End If
-    End If
-End Sub
-
-Private Sub SftpClient_OnAbsolutePath(ByVal Path As String)
-    m_strCurrentDir = Path
-    Call BuildFileList(m_strCurrentDir)
-    editPath.Text = Path
-End Sub
-
-Private Sub SftpClient_OnFileAttributes(ByVal Attributes As IElSftpFileAttributesX)
-    Dim info As IElSftpFileInfoX
-    Dim Row As Integer
-    Dim SizeLo As Long, SizeHi As Long
-    Dim Attr As IElSftpFileAttributesX
-    
-    If ListView1.SelectedItem Is Nothing Then
-        Exit Sub
-    End If
-  
-    Row = ListView1.SelectedItem.Index
-    Set Attr = Attributes
-
-    Set info = m_colCurrentFileList(Row)
-  
-    If Attr.IsAttributeIncluded(SB_SFTP_ATTR_SIZE) Then
-        Call info.Attributes.GetSize(SizeLo, SizeHi)
-        Call Attr.SetSize(SizeLo, SizeHi)
-    End If
-  
-    If Attr.IsAttributeIncluded(SB_SFTP_ATTR_UID) Then
-        info.Attributes.UID = Attr.UID
-    End If
-    
-    If Attr.IsAttributeIncluded(SB_SFTP_ATTR_GID) Then
-        info.Attributes.GID = Attr.GID
-    End If
-    
-    If Attr.IsAttributeIncluded(SB_SFTP_ATTR_ATIME) Then
-        info.Attributes.ATime = Attr.ATime
-    End If
-    
-    If Attr.IsAttributeIncluded(SB_SFTP_ATTR_MTIME) Then
-        info.Attributes.MTime = Attr.MTime
-    End If
-    
-    If Attr.IsAttributeIncluded(SB_SFTP_ATTR_EXTENDEDCOUNT) Then
-        info.Attributes.ExtendedCount = Attr.ExtendedCount
-    End If
-
-    info.Attributes.Directory = Attr.Directory
-  
-    If (Attr.IsAttributeIncluded(SB_SFTP_ATTR_PERMISSIONS)) Then
-        info.Attributes.UserRead = Attr.UserRead
-        info.Attributes.UserWrite = Attr.UserWrite
-        info.Attributes.UserExecute = Attr.UserExecute
-
-        info.Attributes.GroupRead = Attr.GroupRead
-        info.Attributes.GroupWrite = Attr.GroupWrite
-        info.Attributes.GroupExecute = Attr.GroupExecute
-
-        info.Attributes.OtherRead = Attr.OtherRead
-        info.Attributes.OtherWrite = Attr.OtherWrite
-        info.Attributes.OtherExecute = Attr.OtherExecute
-    End If
-
-    Call SetCellInfo(Row, info)
-End Sub
-
-Private Sub scktClient_Connect()
-    mvarCSFTP.TraceText = MESSAGE_PREFIX & "TCP connection opened..."
-    mvarCSFTP.TraceText = MESSAGE_PREFIX & "Authenticating Username: " & mvarCSFTP.UserName & ", Password: " & mvarCSFTP.Password & " using SSHClient..."
-    
-    m_blnAuthenticationFailed = False
-    
-    SSHClient.UserName = mvarCSFTP.UserName
-    SSHClient.Password = mvarCSFTP.Password
-    Call SSHClient.Open
-End Sub
-
-Private Sub scktClient_DataArrival(ByVal bytesTotal As Long)
-    m_blnClientDataAvailable = True
-  
-    While m_blnClientDataAvailable
-        SSHClient.DataAvailable
-    Wend
-End Sub
-
-
-Private Sub scktClient_Close()
-    mvarCSFTP.TraceText = MESSAGE_PREFIX & "TCP connection closed..."
-End Sub
-
-Public Sub BuildFileList(ByVal Path As String)
-    If scktClient.State <> sckConnected Then
-        mvarCSFTP.TraceText = MESSAGE_PREFIX & "BuildFileList Error: not connected..."
-        Exit Sub
-    End If
-    
-    While m_colCurrentFileList.Count > 0
-        Call m_colCurrentFileList.Remove(1)
-    Wend
-    
-    If Path = "." Then
-        mvarCSFTP.TraceText = MESSAGE_PREFIX & "Opening remote directory: Root Path..."
-    Else
-        mvarCSFTP.TraceText = MESSAGE_PREFIX & "Opening remote directory: " & Path & " ..."
-    End If
-    
-    Call SftpClient.OpenDirectory(Path)
-    m_lngState = STATE_OPEN_DIRECTORY_SENT
-End Sub
-
-Private Sub CloseCurrentHandle()
-    If scktClient.State <> sckConnected Then
-        mvarCSFTP.TraceText = MESSAGE_PREFIX & "CloseCurrentHandle Error: not connected..."
-        Exit Sub
-    End If
-    
-    mvarCSFTP.TraceText = MESSAGE_PREFIX & "Closing active handle..."
-    Call SftpClient.CloseHandle(m_strCurrentHandle)
-End Sub
-
-Private Function WritePermissions(ByVal Attributes As IElSftpFileAttributesX) As String
-    Dim Result As String
-    
-    Result = vbNullString
-    
-    If Attributes.Directory Then
-        Result = Result + "d"
-    End If
-    
-    If Attributes.UserRead Then
-        Result = Result + "r"
-    Else
-        Result = Result + "-"
-    End If
-    
-    If Attributes.UserWrite Then
-        Result = Result + "w"
-    Else
-        Result = Result + "-"
-    End If
-    
-    If Attributes.UserExecute Then
-        Result = Result + "x"
-    Else
-        Result = Result + "-"
-    End If
-    
-    If Attributes.GroupRead Then
-        Result = Result + "r"
-    Else
-        Result = Result + "-"
-    End If
-    
-    If Attributes.GroupWrite Then
-        Result = Result + "w"
-    Else
-        Result = Result + "-"
-    End If
-    
-    If Attributes.GroupExecute Then
-        Result = Result + "x"
-    Else
-        Result = Result + "-"
-    End If
-    
-    If Attributes.OtherRead Then
-        Result = Result + "r"
-    Else
-        Result = Result + "-"
-    End If
-    
-    If Attributes.OtherWrite Then
-        Result = Result + "w"
-    Else
-        Result = Result + "-"
-    End If
-    
-    If Attributes.OtherExecute Then
-        Result = Result + "x"
-    Else
-        Result = Result + "-"
-    End If
-    
-    WritePermissions = Result
-End Function
-
-Private Sub OutputFileList()
-    Dim lngIdx As Long
-    Dim info As IElSftpFileInfoX
-    
-    For lngIdx = 1 To m_colCurrentFileList.Count
-        Set info = m_colCurrentFileList(lngIdx)
-
-        If mvarCSFTP.HasTimeOut = False Then
-            If Right(Trim$(info.Name), 4) = ".rcv" Then
-                m_strCurrentFile = info.Name
-                
-                DownloadFile info
-                
-                Exit For
-            End If
-        Else
-            If scktClient.State <> sckConnected Then
-                scktClient.Close
-            End If
-            
-            mvarCSFTP.TraceText = MESSAGE_PREFIX & "Connection timed out. End receiving of messages from server..."
-            Exit For
-        End If
-    Next
-    
-End Sub
+'Private Sub OutputFileList()
+'    Dim lngIdx As Long
+'    Dim info As IElSftpFileInfoX
+'
+'    For lngIdx = 1 To m_colCurrentFileList.Count
+'        Set info = m_colCurrentFileList(lngIdx)
+'
+'        If mvarCSFTP.HasTimeOut = False Then
+'            If Right(Trim$(info.Name), 4) = ".rcv" Then
+'                m_strCurrentFile = info.Name
+'
+'                DownloadFile info
+'
+'                Exit For
+'            End If
+'        Else
+'            If scktClient.State <> sckConnected Then
+'                scktClient.Close
+'            End If
+'
+'            mvarCSFTP.TraceText = MESSAGE_PREFIX & "Connection timed out. End receiving of messages from server..."
+'            Exit For
+'        End If
+'    Next
+'
+'End Sub
 
 Public Sub DeleteFile(ByVal Name As String)
     m_blnHasError = False
@@ -935,16 +935,18 @@ Public Sub DownloadFile(ByVal info As IElSftpFileInfoX)
     m_blnFileDownloaded = True
     
     Exit Sub
-ErrHandler:
-    m_blnHasError = True
     
+ErrHandler:
+    If Err.Number > 0 Then
+        m_blnHasError = True
+    End If
     
 End Sub
 
 Public Sub UploadFile(ByVal LocalFile As String)
     Dim FName As String
     
-    If scktClient.State <> sckConnected Then
+    If Not ElSimpleSftpClientX.Active Then
         mvarCSFTP.TraceText = MESSAGE_PREFIX & "UploadFile Error: not connected..."
         Exit Sub
     End If
@@ -952,53 +954,68 @@ Public Sub UploadFile(ByVal LocalFile As String)
     mvarCSFTP.TraceText = MESSAGE_PREFIX & "Starting file upload, " & LocalFile
     
     FName = ExtractFileName(LocalFile)
-    Call OpenFileForRead(m_lngCurrentFile, LocalFile)
-    m_lngCurrentFileOffset = 0
-    m_lngCurrentFileSize = LOF(m_lngCurrentFile)
-    Call SftpClient.CreateFile(m_strCurrentDir & "/" & FName)
-    m_lngState = STATE_UPLOAD_OPEN
-End Sub
-
-Private Sub WriteNextBlockToFile()
-    Dim Buf As Variant
-    Dim Transferred As Long
+    Dim RemoteName As String
+    RemoteName = m_strCurrentDir & "/" & FName
     
-    If scktClient.State <> sckConnected Then
-        mvarCSFTP.TraceText = MESSAGE_PREFIX & "WriteNextBlockToFile Error: not connected..."
-        Exit Sub
+    On Error GoTo ErrHandler
+    m_blnFileUploaded = False
+    Call ElSimpleSftpClientX.UploadFile(FName, RemoteName)
+    m_blnFileUploaded = True
+        
+    Exit Sub
+    
+ErrHandler:
+    If Err.Number > 0 Then
+        m_blnHasError = True
     End If
     
-    mvarCSFTP.TraceText = MESSAGE_PREFIX & "WriteNextBlockToFile : FileOffset - " & m_lngCurrentFileOffset & " // FileSize - " & m_lngCurrentFileSize
-    
-    If m_lngCurrentFileOffset >= m_lngCurrentFileSize Then
-        m_lngState = STATE_CLOSE_HANDLE
-        mvarCSFTP.TraceText = MESSAGE_PREFIX & "WriteNextBlockToFile Success: Upload is finished."
-        Close #m_lngCurrentFile
-        Call CloseCurrentHandle
-        m_blnFileUploaded = True
-        Exit Sub
-    End If
-    
-    Call BlockRead(m_lngCurrentFile, Buf, FILE_BLOCK_SIZE)
-    Call SftpClient.Write(m_strCurrentHandle, m_lngCurrentFileOffset, 0, Buf)
-    Transferred = ArrSize(Buf)
-    m_lngCurrentFileOffset = m_lngCurrentFileOffset + Transferred
+    'Call OpenFileForRead(m_lngCurrentFile, LocalFile)
+    'm_lngCurrentFileOffset = 0
+    'm_lngCurrentFileSize = LOF(m_lngCurrentFile)
+    'Call SftpClient.CreateFile(m_strCurrentDir & "/" & FName)
+    'm_lngState = STATE_UPLOAD_OPEN
 End Sub
 
-Private Sub RequestAbsolutePath(ByVal Path As String)
-  Call SftpClient.RequestAbsolutePath(Path)
-End Sub
+'Private Sub WriteNextBlockToFile()
+'    Dim Buf As Variant
+'    Dim Transferred As Long
+'
+'    If scktClient.State <> sckConnected Then
+'        mvarCSFTP.TraceText = MESSAGE_PREFIX & "WriteNextBlockToFile Error: not connected..."
+'        Exit Sub
+'    End If
+'
+'    mvarCSFTP.TraceText = MESSAGE_PREFIX & "WriteNextBlockToFile : FileOffset - " & m_lngCurrentFileOffset & " // FileSize - " & m_lngCurrentFileSize
+'
+'    If m_lngCurrentFileOffset >= m_lngCurrentFileSize Then
+'        m_lngState = STATE_CLOSE_HANDLE
+'        mvarCSFTP.TraceText = MESSAGE_PREFIX & "WriteNextBlockToFile Success: Upload is finished."
+'        Close #m_lngCurrentFile
+'        Call CloseCurrentHandle
+'        m_blnFileUploaded = True
+'        Exit Sub
+'    End If
+'
+'    Call BlockRead(m_lngCurrentFile, Buf, FILE_BLOCK_SIZE)
+'    Call SftpClient.Write(m_strCurrentHandle, m_lngCurrentFileOffset, 0, Buf)
+'    Transferred = ArrSize(Buf)
+'    m_lngCurrentFileOffset = m_lngCurrentFileOffset + Transferred
+'End Sub
 
-Private Sub SetCellInfo(ByVal Index As Long, ByVal info As IElSftpFileInfoX)
-    Dim SizeLo As Long
-    Dim SizeHi As Long
-    
-    Call info.Attributes.GetSize(SizeLo, SizeHi)
-    
-    ListView1.ListItems(Index).Text = info.Name
-    ListView1.ListItems(Index).SubItems(1) = Str(SizeLo)
-    ListView1.ListItems(Index).SubItems(2) = WritePermissions(info.Attributes)
-End Sub
+'Private Sub RequestAbsolutePath(ByVal Path As String)
+'  Call SftpClient.RequestAbsolutePath(Path)
+'End Sub
+
+'Private Sub SetCellInfo(ByVal Index As Long, ByVal info As IElSftpFileInfoX)
+'    Dim SizeLo As Long
+'    Dim SizeHi As Long
+'
+'    Call info.Attributes.GetSize(SizeLo, SizeHi)
+'
+'    ListView1.ListItems(Index).Text = info.Name
+'    ListView1.ListItems(Index).SubItems(1) = Str(SizeLo)
+'    ListView1.ListItems(Index).SubItems(2) = WritePermissions(info.Attributes)
+'End Sub
 
 Private Function Str2ByteArr(ByVal S As String) As Variant
     Dim i As Integer
@@ -1035,43 +1052,43 @@ Function OpenFileForWrite(ByRef File As Integer, ByVal FileName As String) As Bo
     Open FileName For Binary Access Write As #File
 End Function
 
-Sub BlockRead(ByVal File As Integer, _
-    ByRef Buffer As Variant, _
-    ByVal Count As Long)
-    
-    Dim S As String
-    
-    S = Input(Count, File)
-    
-    If Len(S) = 0 Then
-        Buffer = Empty
-    Else
-        Buffer = Str2ByteArr(S)
-    End If
-End Sub
-
-Sub BlockWrite(ByVal File As Integer, ByRef Buffer As Variant)
-    Dim lngIdx As Long
-    Dim bytData As Byte
-    
-    Select Case VarType(Buffer)
-        Case vbArray + vbByte
-            For lngIdx = LBound(Buffer) To UBound(Buffer)
-                bytData = Buffer(lngIdx)
-                Put File, , bytData
-            Next
-        
-        Case vbString
-            For lngIdx = 1 To Len(Buffer)
-                Put File, , Mid(Buffer, lngIdx, 1)
-            Next
-        
-        Case Else
-            mvarCSFTP.TraceText = MESSAGE_PREFIX & "Invalid data type..."
-            Call mvarCSFTP.DisconnectFromServer(False)
-    
-    End Select
-End Sub
+'Sub BlockRead(ByVal File As Integer, _
+'    ByRef Buffer As Variant, _
+'    ByVal Count As Long)
+'
+'    Dim S As String
+'
+'    S = Input(Count, File)
+'
+'    If Len(S) = 0 Then
+'        Buffer = Empty
+'    Else
+'        Buffer = Str2ByteArr(S)
+'    End If
+'End Sub
+'
+'Sub BlockWrite(ByVal File As Integer, ByRef Buffer As Variant)
+'    Dim lngIdx As Long
+'    Dim bytData As Byte
+'
+'    Select Case VarType(Buffer)
+'        Case vbArray + vbByte
+'            For lngIdx = LBound(Buffer) To UBound(Buffer)
+'                bytData = Buffer(lngIdx)
+'                Put File, , bytData
+'            Next
+'
+'        Case vbString
+'            For lngIdx = 1 To Len(Buffer)
+'                Put File, , Mid(Buffer, lngIdx, 1)
+'            Next
+'
+'        Case Else
+'            mvarCSFTP.TraceText = MESSAGE_PREFIX & "Invalid data type..."
+'            Call mvarCSFTP.DisconnectFromServer(False)
+'
+'    End Select
+'End Sub
 
 Function ExtractFileName(ByVal FileName As String) As String
     Dim ch As String
@@ -1100,7 +1117,7 @@ Public Sub ConnectSFTP()
         Call ElSimpleSftpClientX.Close
     End If
     
-    SftpClient.EnableVersion SB_SFTP_VERSION_3
+    ElSimpleSftpClientX.EnableVersion SB_SFTP_VERSION_3
     ElSimpleSftpClientX.Address = mvarCSFTP.HostName
     ElSimpleSftpClientX.Port = mvarCSFTP.PortNumber
     
@@ -1114,7 +1131,7 @@ ErrHandler:
         Case 0
             
         Case Else
-            mvarCSFTP.TraceText MESSAGE_PREFIX & "Connection Error - " & Err.Description & " (" & Err.Number & ") "
+            mvarCSFTP.TraceText = MESSAGE_PREFIX & "Connection Error - " & Err.Description & " (" & Err.Number & ") "
             
     End Select
     
@@ -1138,45 +1155,45 @@ Public Sub RefreshRootDirectoryList()
     Dim info_copy As IElSftpFileInfoX
     Dim item As ListItem
     Dim a() As IElSftpFileInfoX
-    
+
     m_blnHasError = False
-    
-    If Not SftpClient.Active Then
+
+    If Not ElSimpleSftpClientX.Active Then
         Exit Sub
     End If
-  
+
     'Clearing old data
     While m_colCurrentFileList.Count > 0
         m_colCurrentFileList.Remove (1)
     Wend
-  
+
     On Error GoTo HandleErr
     m_strCurrentDir = vbNullString
     m_strCurrentDir = ElSimpleSftpClientX.RequestAbsolutePath(m_strCurrentDir)
-  
+
     'Retrieving directory contents
-    Log "Retrieving file list", False
-    Call ElSimpleSftpClientX.ListDirectory(currentDir, Listing)
+    mvarCSFTP.TraceText = MESSAGE_PREFIX & "Retrieving file list..."
+    Call ElSimpleSftpClientX.ListDirectory(m_strCurrentDir, Listing)
     For i = LBound(Listing) To UBound(Listing)
         Set info_copy = New ElSftpFileInfoX
-        
+
         On Error Resume Next
         Set info = Listing(i)
         On Error GoTo 0
-        
+
         Call info.CopyTo(info_copy)
-        
+
         If Not info_copy.Attributes.Directory Then
             Call m_colCurrentFileList.Add(info_copy)
         End If
     Next
-    
+
     m_blnDirectoryReadFinished = True
     Exit Sub
-    
+
 HandleErr:
     m_blnDirectoryReadFinished = True
     m_blnHasError = True
-    mvarCSFTP.TraceText MESSAGE_PREFIX & "Refresh Root Directory List Error - " & Err.Description & " (" & Err.Number & ") "
-    
+    mvarCSFTP.TraceText = MESSAGE_PREFIX & "Refresh Root Directory List Error - " & Err.Description & " (" & Err.Number & ") "
+
 End Sub

@@ -333,16 +333,30 @@ Public Sub SendMessage(ByVal Message As String, ByVal Code As String, ByVal Docu
         .TimeOutCounter.Interval = 1000 * TimeoutInterval
         .TimeOutCounter.Enabled = True
         
+        
+        '************************************************************************************************************************************************
+        'START REFRESH DIRECTORY LIST
+        '************************************************************************************************************************************************
+        .RefreshRootDirectoryList
+        
         Do While True
             DoEvents
+            
             If .m_blnDirectoryReadFinished = True Then Exit Do
-    
-            If HasTimeOut = True Then
-                Me.TraceText = MESSAGE_PREFIX & "Queue has timeout while trying to connect to SFTP server..."
+            
+            'If timeout time is reached or there was an error exit pullmessages
+            If (HasTimeOut = True) Or (.m_blnHasError = True) Then
+                If .m_blnHasError Then
+                    Me.TraceText = MESSAGE_PREFIX & "Error has occured while trying to refresh directory to SFTP server..."
+                Else
+                    Me.TraceText = MESSAGE_PREFIX & "Queue has timeout while trying to connect to SFTP server..."
+                End If
+                
                 Call DisconnectFromServer(False)
                 Exit Sub
             End If
         Loop
+        '************************************************************************************************************************************************
             
         'Write Message to file for sending
         strFileName = CreateFileName(DocumentType, Code)
@@ -353,6 +367,13 @@ Public Sub SendMessage(ByVal Message As String, ByVal Code As String, ByVal Docu
         Do While True
             DoEvents
             If .m_blnFileUploaded = True Then Exit Do
+            
+            If .m_blnHasError = True Then
+                Me.TraceText = MESSAGE_PREFIX & "Error has occured while trying to send message to server..."
+                
+                Call DisconnectFromServer(False)
+                Exit Sub
+            End If
         Loop
         
         'Cleanup sent files
@@ -369,7 +390,29 @@ Public Sub SendMessage(ByVal Message As String, ByVal Code As String, ByVal Docu
             'Create a 0.5 sec delay
         Loop Until Timer >= sngDelay
         
-        .BuildFileList "."
+        '************************************************************************************************************************************************
+        'START REFRESH DIRECTORY LIST
+        '************************************************************************************************************************************************
+        .RefreshRootDirectoryList
+        
+        Do While True
+            DoEvents
+            
+            If .m_blnDirectoryReadFinished = True Then Exit Do
+            
+            'If timeout time is reached or there was an error exit pullmessages
+            If (HasTimeOut = True) Or (.m_blnHasError = True) Then
+                If .m_blnHasError Then
+                    Me.TraceText = MESSAGE_PREFIX & "Error has occured while trying to refresh directory to SFTP server..."
+                Else
+                    Me.TraceText = MESSAGE_PREFIX & "Queue has timeout while trying to connect to SFTP server..."
+                End If
+                
+                Call DisconnectFromServer(False)
+                Exit Sub
+            End If
+        Loop
+        '************************************************************************************************************************************************
         
         For lngIdx = 1 To .m_colCurrentFileList.Count
             Set info = .m_colCurrentFileList(lngIdx)
@@ -382,6 +425,13 @@ Public Sub SendMessage(ByVal Message As String, ByVal Code As String, ByVal Docu
                     DoEvents
                     
                     If .m_blnFileDeleted = True Then Exit Do
+                    
+                    If .m_blnHasError = True Then
+                        Me.TraceText = MESSAGE_PREFIX & "Error has occured while trying to delete message from server..."
+                        
+                        Call DisconnectFromServer(False)
+                        Exit Sub
+                    End If
                 Loop
                     
                 Me.TraceText = MESSAGE_PREFIX & "Communication Error, file sent to SFTP is corrupted, file will be resend on next queue..."
